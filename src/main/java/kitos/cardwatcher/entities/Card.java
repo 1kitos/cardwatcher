@@ -1,11 +1,16 @@
 package kitos.cardwatcher.entities;
 
+
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -16,16 +21,15 @@ public class Card {
     private Long id;
     
     private String name;
-    private String setCode;
-    private String cardNumber;
     
     @ManyToOne
     @JoinColumn(name = "card_game_id")
     private CardGame cardGame;
+    
+    @OneToMany(mappedBy = "card")
+    private List<CardPrinting> cardPrintings = new ArrayList<>();
+    
 
-      
-    
-    
 	public Card() {
 		super();
 	}
@@ -47,21 +51,6 @@ public class Card {
 		this.name = name;
 	}
 
-	public String getSetCode() {
-		return setCode;
-	}
-
-	public void setSetCode(String setCode) {
-		this.setCode = setCode;
-	}
-
-	public String getCardNumber() {
-		return cardNumber;
-	}
-
-	public void setCardNumber(String cardNumber) {
-		this.cardNumber = cardNumber;
-	}
 
 	public CardGame getCardGame() {
 		return cardGame;
@@ -69,6 +58,18 @@ public class Card {
 
 	public void setCardGame(CardGame cardGame) {
 		this.cardGame = cardGame;
+	}
+	
+	
+	public List<CardPrinting> getCardPrintings()
+	{
+		return this.cardPrintings;
+	}
+	
+	
+	public void setCardPrintings(List<CardPrinting> printings)
+	{
+		this.cardPrintings = printings;
 	}
     
     

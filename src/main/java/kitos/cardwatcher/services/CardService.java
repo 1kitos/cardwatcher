@@ -57,8 +57,6 @@ public class CardService {
         return cardRepository.findById(id)
                 .map(card -> {
                     card.setName(cardDetails.getName());
-                    card.setSetCode(cardDetails.getSetCode());
-                    card.setCardNumber(cardDetails.getCardNumber());
                     card.setCardGame(cardDetails.getCardGame());
                     return cardRepository.save(card);
                 })
