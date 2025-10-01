@@ -3,6 +3,8 @@ package kitos.cardwatcher.controllers.rest;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+
+import kitos.cardwatcher.entities.CardPrice;
 import kitos.cardwatcher.entities.CardPrinting;
 import kitos.cardwatcher.services.CardPrintingService;
 import java.util.List;
@@ -72,4 +74,19 @@ public class CardPrintingController {
         cardPrintingService.deleteCardPrinting(id);
         return ResponseEntity.ok().build();
     }
+    
+    
+    @GetMapping("/{id}/price-history")
+    public List<CardPrice> getPriceHistory(@PathVariable("id") Long printingId) {
+        return cardPrintingService.getPriceHistory(printingId);
+    }
+    
+    @PostMapping("/{id}/prices")
+    public CardPrinting addPriceToPrinting(
+        @PathVariable("id") Long printingId, 
+        @RequestBody CardPrice cardPrice) {
+        return cardPrintingService.addPriceToPrinting(printingId, cardPrice);
+    }
+    
+    
 }

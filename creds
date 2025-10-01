@@ -1,0 +1,4 @@
+h2 url: jdbc:h2:file:./data/cardwatcher
+h2 user: sa
+h2 pass: 
+

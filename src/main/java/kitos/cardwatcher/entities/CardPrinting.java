@@ -1,12 +1,17 @@
 package kitos.cardwatcher.entities;
 
+import java.util.List;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+
+
 
 @Entity
 @Table(name = "card_printings")
@@ -23,6 +28,8 @@ public class CardPrinting {
     private String rarity;
     private String serialNumber;
 	
+    @OneToMany(mappedBy = "cardPrinting")
+    private List<CardPrice> priceHistory;
 	
 	public CardPrinting()
 	{
@@ -81,6 +88,15 @@ public class CardPrinting {
 	}
 	
 	
+	public List<CardPrice> getPriceHistory()
+	{
+		return this.priceHistory;
+	}
+	
+	public void setPriceHistory(List<CardPrice> history)
+	{
+		this.priceHistory = history;
+	}
 	
 	
 	

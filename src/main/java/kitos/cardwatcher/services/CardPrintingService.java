@@ -2,6 +2,8 @@ package kitos.cardwatcher.services;
 
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import kitos.cardwatcher.entities.CardPrice;
 import kitos.cardwatcher.entities.CardPrinting;
 import kitos.cardwatcher.repositories.CardPrintingRepository;
 import java.util.List;
@@ -65,4 +67,18 @@ public class CardPrintingService {
     public void deleteCardPrinting(Long id) {
         cardPrintingRepository.deleteById(id);
     }
+    
+    
+    public List<CardPrice> getPriceHistory(Long printingId) {
+		return null;
+        // Would fetch CardPrice records for this printing
+    }
+
+    public CardPrinting addPriceToPrinting(Long printingId, CardPrice cardPrice) {
+		return null;
+        // Would associate a price with this printing
+    }
+    
+    
+    
 }
