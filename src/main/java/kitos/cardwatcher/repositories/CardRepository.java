@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import kitos.cardwatcher.entities.Card;
+import kitos.cardwatcher.entities.CardGame;
 
 @Repository
 public interface CardRepository extends JpaRepository<Card, Long> {
@@ -14,7 +15,7 @@ public interface CardRepository extends JpaRepository<Card, Long> {
     
     List<Card> findByNameContainingIgnoreCase(String name);
     
-    
+    Card findByNameAndCardGame(String name, CardGame cardGame);
     
     
 }
