@@ -11,10 +11,14 @@ import kitos.cardwatcher.entities.Card;
 import kitos.cardwatcher.entities.CardGame;
 import kitos.cardwatcher.entities.CardPrice;
 import kitos.cardwatcher.entities.CardPrinting;
+import kitos.cardwatcher.entities.User;
+import kitos.cardwatcher.entities.Watchlist;
 import kitos.cardwatcher.repositories.CardGameRepository;
 import kitos.cardwatcher.repositories.CardPriceRepository;
 import kitos.cardwatcher.repositories.CardPrintingRepository;
 import kitos.cardwatcher.repositories.CardRepository;
+import kitos.cardwatcher.repositories.UserRepository;
+import kitos.cardwatcher.repositories.WatchlistRepository;
 
 @Component
 public class DataLoader implements CommandLineRunner {
@@ -30,6 +34,12 @@ public class DataLoader implements CommandLineRunner {
     
     @Autowired
     private CardPriceRepository cardPriceRepo;
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
+    private WatchlistRepository watchlistRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -229,4 +239,53 @@ public class DataLoader implements CommandLineRunner {
         printing.setSerialNumber(serialNumber);
         return printing;
     }
+    
+    
+    public void loadUsersAndWatchlists() {
+        if (userRepository.count() == 0) {
+            // Create sample users
+            List<User> users = List.of(
+                createUser("cardCollector"),
+                createUser("mtgInvestor"),
+                createUser("yugiohFan")
+            );
+            userRepository.saveAll(users);
+            System.out.println("Users loaded!");
+            
+            // Create sample watchlists
+            User collector = userRepository.findByUsername("cardCollector").orElseThrow();
+            User investor = userRepository.findByUsername("mtgInvestor").orElseThrow();
+            
+            List<Watchlist> watchlists = List.of(
+                createWatchlist("Favorites", 24, collector),
+                createWatchlist("Investment Watch", 6, investor),
+                createWatchlist("Budget Buys", 12, collector)
+            );
+            watchlistRepository.saveAll(watchlists);
+            System.out.println("Watchlists loaded!");
+        }
+    }
+
+    private User createUser(String username) {
+        User user = new User();
+        user.setUsername(username);
+        return user;
+    }
+
+    private Watchlist createWatchlist(String name, Integer refreshRate, User user) {
+        Watchlist watchlist = new Watchlist();
+        watchlist.setName(name);
+        watchlist.setRefreshRate(refreshRate);
+        watchlist.setUser(user);
+        return watchlist;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }
