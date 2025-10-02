@@ -1,75 +1,105 @@
 package kitos.cardwatcher.controllers.rest;
 
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import kitos.cardwatcher.dtos.requests.CreateCardPriceRequest;
+import kitos.cardwatcher.dtos.requests.UpdateCardPriceRequest;
+import kitos.cardwatcher.dtos.responses.CardPriceResponse;
+import kitos.cardwatcher.dtos.shared.CardPriceDTO;
 import kitos.cardwatcher.entities.CardPrice;
 import kitos.cardwatcher.services.CardPriceService;
+import java.net.URI;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/prices")
+@Tag(name = "Cards: Printings", description = "Card printing operations")
 public class CardPriceController {
 
     @Autowired
     private CardPriceService cardPriceService;
 
-    // === PRICE ENDPOINTS ===
-    
+    // === GET ALL CARD PRICES ===
+    @GetMapping
+    public List<CardPriceDTO> getAllCardPrices() {
+        return cardPriceService.getAllCardPrices().stream()
+                .map(CardPriceDTO::new)
+                .collect(Collectors.toList());
+    }
+
+    // === GET CARD PRICE BY ID ===
     @GetMapping("/{id}")
-    public ResponseEntity<CardPrice> getCardPriceById(@PathVariable("id") Long id) {
+    public ResponseEntity<CardPriceDTO> getCardPriceById(@PathVariable("id") Long id) {
         return cardPriceService.getCardPriceById(id)
-                .map(ResponseEntity::ok)
+                .map(cardPrice -> ResponseEntity.ok(new CardPriceDTO(cardPrice)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // === GET PRICES BY CARD PRINTING ID ===
     @GetMapping("/printing/{cardPrintingId}")
-    public List<CardPrice> getPricesByCardPrintingId(@PathVariable("cardPrintingId") Long cardPrintingId) {
-        return cardPriceService.getPricesByCardPrintingId(cardPrintingId);
+    public List<CardPriceDTO> getPricesByCardPrintingId(@PathVariable("cardPrintingId") Long cardPrintingId) {
+        return cardPriceService.getPricesByCardPrintingId(cardPrintingId).stream()
+                .map(CardPriceDTO::new)
+                .collect(Collectors.toList());
     }
 
+    // === GET LATEST PRICES BY CARD PRINTING ID ===
     @GetMapping("/printing/{cardPrintingId}/latest")
-    public List<CardPrice> getLatestPricesByCardPrintingId(@PathVariable("cardPrintingId") Long cardPrintingId) {
-        return cardPriceService.getLatestPricesByCardPrintingId(cardPrintingId);
-    }
-
-    // Additional price endpoints
-    @GetMapping
-    public List<CardPrice> getAllCardPrices() {
-        return cardPriceService.getAllCardPrices();
+    public List<CardPriceDTO> getLatestPricesByCardPrintingId(@PathVariable("cardPrintingId") Long cardPrintingId) {
+        return cardPriceService.getLatestPricesByCardPrintingId(cardPrintingId).stream()
+                .map(CardPriceDTO::new)
+                .collect(Collectors.toList());
     }
     
+    // === CREATE CARD PRICE ===
     @PostMapping
-    public CardPrice createCardPrice(@RequestBody CardPrice cardPrice) {
-        return cardPriceService.saveCardPrice(cardPrice);
+    public ResponseEntity<CardPriceResponse> createCardPrice(@RequestBody CreateCardPriceRequest createCardPriceRequest) {
+        CardPrice cardPrice = createCardPriceRequest.toCardPrice();
+        CardPrice savedCardPrice = cardPriceService.saveCardPrice(cardPrice);
+        CardPriceResponse response = new CardPriceResponse(savedCardPrice);
+        
+        return ResponseEntity
+                .created(URI.create("/api/prices/" + savedCardPrice.getId()))
+                .body(response);
     }
 
+    // === CREATE PRICE FOR SPECIFIC PRINTING ===
     @PostMapping("/printing/{cardPrintingId}")
-    public ResponseEntity<CardPrice> createPriceForPrinting(
+    public ResponseEntity<CardPriceResponse> createPriceForPrinting(
             @PathVariable("cardPrintingId") Long cardPrintingId, 
-            @RequestBody CardPrice cardPrice) {
+            @RequestBody CreateCardPriceRequest createCardPriceRequest) {
         try {
+            CardPrice cardPrice = createCardPriceRequest.toCardPrice();
             CardPrice createdPrice = cardPriceService.createPriceForPrinting(cardPrintingId, cardPrice);
-            return ResponseEntity.ok(createdPrice);
+            CardPriceResponse response = new CardPriceResponse(createdPrice);
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
     
+    // === UPDATE CARD PRICE ===
     @PutMapping("/{id}")
-    public ResponseEntity<CardPrice> updateCardPrice(@PathVariable("id") Long id, @RequestBody CardPrice priceDetails) {
+    public ResponseEntity<CardPriceResponse> updateCardPrice(
+            @PathVariable("id") Long id, 
+            @RequestBody UpdateCardPriceRequest updateCardPriceRequest) {
         try {
-            CardPrice updatedPrice = cardPriceService.updateCardPrice(id, priceDetails);
-            return ResponseEntity.ok(updatedPrice);
+            CardPrice cardPrice = updateCardPriceRequest.toCardPrice();
+            CardPrice updatedPrice = cardPriceService.updateCardPrice(id, cardPrice);
+            CardPriceResponse response = new CardPriceResponse(updatedPrice);
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
     
+    // === DELETE CARD PRICE ===
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCardPrice(@PathVariable("id") Long id) {
         cardPriceService.deleteCardPrice(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 }
