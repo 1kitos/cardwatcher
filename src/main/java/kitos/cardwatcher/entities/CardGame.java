@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import kitos.cardwatcher.dtos.shared.CardGameDTO;
 
 @Entity
 @Table(name = "card_games")
@@ -51,9 +52,6 @@ public class CardGame {
 	}
 
 
-
-
-
 	public String getName()
     {
     	return this.name;
@@ -64,6 +62,10 @@ public class CardGame {
     	this.name = name;
     }
     
+    public CardGameDTO toDTO()
+    {
+    	return new CardGameDTO(this);
+    }
     
     
     
