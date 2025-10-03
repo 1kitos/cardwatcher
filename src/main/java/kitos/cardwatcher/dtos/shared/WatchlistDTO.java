@@ -1,6 +1,8 @@
 // kitos.cardwatcher.dtos.shared.WatchlistDTO.java
 package kitos.cardwatcher.dtos.shared;
 
+import java.time.LocalDateTime;
+
 import kitos.cardwatcher.entities.Watchlist;
 
 public class WatchlistDTO {
@@ -8,11 +10,15 @@ public class WatchlistDTO {
     private String name;
     private Integer refreshRate;
     private Long userId;
+    private LocalDateTime createdAt;   
+    private LocalDateTime updatedAt; 
     
     public WatchlistDTO(Watchlist watchlist) {
         this.id = watchlist.getId();
         this.name = watchlist.getName();
         this.refreshRate = watchlist.getRefreshRate();
+        this.createdAt = watchlist.getCreatedAt();
+        this.updatedAt = watchlist.getUpdatedAt();
         if (watchlist.getUser() != null) {
             this.userId = watchlist.getUser().getId();
         }
@@ -58,4 +64,23 @@ public class WatchlistDTO {
     {
     	this.userId = userId; 
     }
+
+	public LocalDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(LocalDateTime createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	public LocalDateTime getUpdatedAt() {
+		return updatedAt;
+	}
+
+	public void setUpdatedAt(LocalDateTime updatedAt) {
+		this.updatedAt = updatedAt;
+	}
+    
+    
+    
 }

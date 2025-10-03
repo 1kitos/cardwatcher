@@ -2,6 +2,8 @@ package kitos.cardwatcher.controllers.rest;
 
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import kitos.cardwatcher.dtos.requests.CreateUserRequest;
@@ -22,6 +24,7 @@ public class UserController {
     private UserService userService;
 
     @GetMapping
+    @Operation(summary = "Get all users")
     public List<UserDTO> getAllUsers() {
         return userService.getAllUsers().stream()
             .map(UserDTO::new)
@@ -29,21 +32,27 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
+    @Operation(summary = "Get user by ID")
+    public ResponseEntity<UserDTO> getUserById(
+            @PathVariable("id") @Parameter(description = "User ID", example = "1") Long id) {
         return userService.getUserById(id)
             .map(user -> ResponseEntity.ok(new UserDTO(user)))
             .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/username/{username}")
-    public ResponseEntity<UserDTO> getUserByUsername(@PathVariable String username) {
+    @Operation(summary = "Get user by username")
+    public ResponseEntity<UserDTO> getUserByUsername(
+            @PathVariable("username") @Parameter(description = "Username", example = "john_doe") String username) {
         return userService.getUserByUsername(username)
             .map(user -> ResponseEntity.ok(new UserDTO(user)))
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<UserResponse> createUser(@RequestBody CreateUserRequest createUserRequest) {
+    @Operation(summary = "Create a new user")
+    public ResponseEntity<UserResponse> createUser(
+            @RequestBody @Parameter(description = "User creation data") CreateUserRequest createUserRequest) {
         User user = new User();
         user.setUsername(createUserRequest.getUsername());
         
@@ -56,9 +65,10 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update a user")
     public ResponseEntity<UserResponse> updateUser(
-            @PathVariable Long id,
-            @RequestBody CreateUserRequest updateUserRequest) {
+            @PathVariable("id") @Parameter(description = "User ID", example = "1") Long id,
+            @RequestBody @Parameter(description = "User update data") CreateUserRequest updateUserRequest) {
         try {
             User user = new User();
             user.setUsername(updateUserRequest.getUsername());
@@ -72,7 +82,9 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    @Operation(summary = "Delete a user")
+    public ResponseEntity<Void> deleteUser(
+            @PathVariable("id") @Parameter(description = "User ID", example = "1") Long id) {
         try {
             userService.deleteUser(id);
             return ResponseEntity.noContent().build();

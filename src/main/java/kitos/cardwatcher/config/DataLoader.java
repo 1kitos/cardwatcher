@@ -43,11 +43,12 @@ public class DataLoader implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-//        clearData();
+    	clearData();
         loadCardGames();
         loadCards();
         loadCardPrintings();
         loadCardPrices();
+        loadUsersAndWatchlists();
     }
     
     private void clearData() {
@@ -55,6 +56,8 @@ public class DataLoader implements CommandLineRunner {
         cardPrintingRepo.deleteAll();
         cardRepo.deleteAll();
         cardGameRepo.deleteAll();
+        watchlistRepository.deleteAll(); 
+        userRepository.deleteAll();     
     }
     
     public void loadCardGames() {

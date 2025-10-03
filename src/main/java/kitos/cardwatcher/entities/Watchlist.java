@@ -1,6 +1,10 @@
 package kitos.cardwatcher.entities;
 
+import java.time.LocalDateTime;
 import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -25,6 +29,15 @@ public class Watchlist {
 	    private User user;
 	    
 	    private Integer refreshRate = 24;
+	    
+	    
+	    @CreationTimestamp
+	    private LocalDateTime createdAt;
+	    
+	    @UpdateTimestamp  
+	    private LocalDateTime updatedAt;
+	    
+	    
 	    
 	    @ManyToMany
 	    @JoinTable(
@@ -88,6 +101,26 @@ public class Watchlist {
 
 	public void setCardPrintings(List<CardPrinting> cardPrintings) {
 		this.cardPrintings = cardPrintings;
+	}
+
+
+	public LocalDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+
+	public void setCreatedAt(LocalDateTime createdAt) {
+		this.createdAt = createdAt;
+	}
+
+
+	public LocalDateTime getUpdatedAt() {
+		return updatedAt;
+	}
+
+
+	public void setUpdatedAt(LocalDateTime updatedAt) {
+		this.updatedAt = updatedAt;
 	}
     
     

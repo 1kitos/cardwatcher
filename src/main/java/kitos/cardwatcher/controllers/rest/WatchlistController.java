@@ -1,8 +1,9 @@
-// kitos.cardwatcher.controllers.rest.WatchlistController.java
 package kitos.cardwatcher.controllers.rest;
 
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import kitos.cardwatcher.dtos.requests.CreateWatchlistRequest;
@@ -24,6 +25,7 @@ public class WatchlistController {
     private WatchlistService watchlistService;
 
     @GetMapping
+    @Operation(summary = "Get all watchlists")
     public List<WatchlistDTO> getAllWatchlists() {
         return watchlistService.getAllWatchlists().stream()
             .map(WatchlistDTO::new)
@@ -31,28 +33,43 @@ public class WatchlistController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<WatchlistResponse> getWatchlistById(@PathVariable Long id) {
+    @Operation(summary = "Get watchlist by ID")
+    public ResponseEntity<WatchlistResponse> getWatchlistById(
+            @PathVariable("id") @Parameter(description = "Watchlist ID", example = "1") Long id) {
         return watchlistService.getWatchlistById(id)
             .map(watchlist -> ResponseEntity.ok(new WatchlistResponse(watchlist)))
             .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/user/{userId}")
-    public List<WatchlistDTO> getWatchlistsByUserId(@PathVariable Long userId) {
+    @Operation(summary = "Get watchlists by user ID")
+    public List<WatchlistDTO> getWatchlistsByUserId(
+            @PathVariable("userId") @Parameter(description = "User ID", example = "123") Long userId) {
         return watchlistService.getWatchlistsByUserId(userId).stream()
             .map(WatchlistDTO::new)
             .collect(Collectors.toList());
     }
 
     @GetMapping("/user/username/{username}")
-    public List<WatchlistDTO> getWatchlistsByUsername(@PathVariable String username) {
+    @Operation(summary = "Get watchlists by username")
+    public List<WatchlistDTO> getWatchlistsByUsername(
+            @PathVariable("username") 
+            @Parameter(
+                name = "username",
+                description = "Username to filter watchlists by",
+                example = "john_doe",
+                required = true
+            ) 
+            String username) {
         return watchlistService.getWatchlistsByUsername(username).stream()
             .map(WatchlistDTO::new)
             .collect(Collectors.toList());
     }
 
     @PostMapping
-    public ResponseEntity<WatchlistResponse> createWatchlist(@RequestBody CreateWatchlistRequest createWatchlistRequest) {
+    @Operation(summary = "Create a new watchlist")
+    public ResponseEntity<WatchlistResponse> createWatchlist(
+            @RequestBody @Parameter(description = "Watchlist creation data") CreateWatchlistRequest createWatchlistRequest) {
         Watchlist watchlist = new Watchlist();
         watchlist.setName(createWatchlistRequest.getName());
         watchlist.setRefreshRate(createWatchlistRequest.getRefreshRate());
@@ -66,9 +83,10 @@ public class WatchlistController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update a watchlist")
     public ResponseEntity<WatchlistResponse> updateWatchlist(
-            @PathVariable Long id,
-            @RequestBody UpdateWatchlistRequest updateWatchlistRequest) {
+            @PathVariable("id") @Parameter(description = "Watchlist ID", example = "1") Long id,
+            @RequestBody @Parameter(description = "Watchlist update data") UpdateWatchlistRequest updateWatchlistRequest) {
         try {
             Watchlist watchlist = new Watchlist();
             watchlist.setName(updateWatchlistRequest.getName());
@@ -83,7 +101,9 @@ public class WatchlistController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteWatchlist(@PathVariable Long id) {
+    @Operation(summary = "Delete a watchlist")
+    public ResponseEntity<Void> deleteWatchlist(
+            @PathVariable("id") @Parameter(description = "Watchlist ID", example = "1") Long id) {
         try {
             watchlistService.deleteWatchlist(id);
             return ResponseEntity.noContent().build();
@@ -93,9 +113,10 @@ public class WatchlistController {
     }
 
     @PostMapping("/{watchlistId}/card-printings/{cardPrintingId}")
+    @Operation(summary = "Add card printing to watchlist")
     public ResponseEntity<WatchlistResponse> addCardPrintingToWatchlist(
-            @PathVariable Long watchlistId,
-            @PathVariable Long cardPrintingId) {
+            @PathVariable("watchlistId") @Parameter(description = "Watchlist ID", example = "1") Long watchlistId,
+            @PathVariable("cardPrintingId") @Parameter(description = "Card printing ID", example = "456") Long cardPrintingId) {
         try {
             Watchlist updatedWatchlist = watchlistService.addCardPrintingToWatchlist(watchlistId, cardPrintingId);
             WatchlistResponse response = new WatchlistResponse(updatedWatchlist);
@@ -106,9 +127,10 @@ public class WatchlistController {
     }
 
     @DeleteMapping("/{watchlistId}/card-printings/{cardPrintingId}")
+    @Operation(summary = "Remove card printing from watchlist")
     public ResponseEntity<WatchlistResponse> removeCardPrintingFromWatchlist(
-            @PathVariable Long watchlistId,
-            @PathVariable Long cardPrintingId) {
+            @PathVariable("watchlistId") @Parameter(description = "Watchlist ID", example = "1") Long watchlistId,
+            @PathVariable("cardPrintingId") @Parameter(description = "Card printing ID", example = "456") Long cardPrintingId) {
         try {
             Watchlist updatedWatchlist = watchlistService.removeCardPrintingFromWatchlist(watchlistId, cardPrintingId);
             WatchlistResponse response = new WatchlistResponse(updatedWatchlist);
