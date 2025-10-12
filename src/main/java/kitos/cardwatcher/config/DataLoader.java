@@ -2,21 +2,26 @@ package kitos.cardwatcher.config;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import kitos.cardwatcher.entities.Card;
 import kitos.cardwatcher.entities.CardGame;
 import kitos.cardwatcher.entities.CardPrice;
 import kitos.cardwatcher.entities.CardPrinting;
 import kitos.cardwatcher.entities.User;
+import kitos.cardwatcher.entities.UserCredentials;
 import kitos.cardwatcher.entities.Watchlist;
 import kitos.cardwatcher.repositories.CardGameRepository;
 import kitos.cardwatcher.repositories.CardPriceRepository;
 import kitos.cardwatcher.repositories.CardPrintingRepository;
 import kitos.cardwatcher.repositories.CardRepository;
+import kitos.cardwatcher.repositories.UserCredentialsRepository;
 import kitos.cardwatcher.repositories.UserRepository;
 import kitos.cardwatcher.repositories.WatchlistRepository;
 
@@ -39,17 +44,25 @@ public class DataLoader implements CommandLineRunner {
     private UserRepository userRepository;
     
     @Autowired
+    private UserCredentialsRepository userCredentialsRepository;
+    
+    @Autowired
     private WatchlistRepository watchlistRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Override
+    @Transactional
     public void run(String... args) throws Exception {
         clearData();
         loadCardGames();
         loadCards();
         loadCardPrintings();
         loadCardPrices();
+        loadUsersAndCredentials(); // Updated method
         loadUsersAndWatchlists();
-        populateWatchlistsWithCards(); // Add this method call
+        populateWatchlistsWithCards();
     }
     
     private void clearData() {
@@ -58,6 +71,7 @@ public class DataLoader implements CommandLineRunner {
         cardRepo.deleteAll();
         cardGameRepo.deleteAll();
         watchlistRepository.deleteAll(); 
+        userCredentialsRepository.deleteAll(); // Clear credentials first
         userRepository.deleteAll();     
     }
     
@@ -188,16 +202,125 @@ public class DataLoader implements CommandLineRunner {
         }
     }
     
+    // NEW METHOD: Load users with their credentials
+    public void loadUsersAndCredentials() {
+        if (userRepository.count() == 0) {
+            // Create sample users
+            List<User> users = List.of(
+                createUser("cardCollector"),
+                createUser("mtgInvestor"),
+                createUser("yugiohFan")
+            );
+            userRepository.saveAll(users);
+            System.out.println("Users loaded!");
+            
+            // Create credentials for each user
+            List<UserCredentials> credentials = List.of(
+                createUserCredentials(users.get(0).getId(), "password123"),
+                createUserCredentials(users.get(1).getId(), "investor456"),
+                createUserCredentials(users.get(2).getId(), "yugioh789")
+            );
+            userCredentialsRepository.saveAll(credentials);
+            System.out.println("User credentials loaded!");
+        }
+    }
+    
+    public void loadUsersAndWatchlists() {
+        if (watchlistRepository.count() == 0) {
+            // Get users (already created in loadUsersAndCredentials)
+            User collector = userRepository.findByUsername("cardCollector").orElseThrow();
+            User investor = userRepository.findByUsername("mtgInvestor").orElseThrow();
+            User yugiohFan = userRepository.findByUsername("yugiohFan").orElseThrow();
+            
+            List<Watchlist> watchlists = List.of(
+                createWatchlist("Favorites", 24, collector),
+                createWatchlist("Investment Watch", 6, investor),
+                createWatchlist("Budget Buys", 12, collector),
+                createWatchlist("Yu-Gi-Oh Collection", 24, yugiohFan)
+            );
+            watchlistRepository.saveAll(watchlists);
+            System.out.println("Watchlists loaded!");
+        }
+    }
+
+    private void populateWatchlistsWithCards() {
+        try {
+            // Get users
+            User collector = userRepository.findByUsername("cardCollector").orElseThrow();
+            User investor = userRepository.findByUsername("mtgInvestor").orElseThrow();
+            User yugiohFan = userRepository.findByUsername("yugiohFan").orElseThrow();
+            
+            // Get all printings
+            List<CardPrinting> allPrintings = cardPrintingRepo.findAll();
+            
+            // Get specific printings
+            List<CardPrinting> expensivePrintings = allPrintings.stream()
+                .filter(p -> p.getRarity().toLowerCase().contains("mythic") || 
+                            p.getRarity().toLowerCase().contains("secret") ||
+                            p.getRarity().toLowerCase().contains("rainbow"))
+                .limit(4)
+                .collect(Collectors.toList());
+            
+            List<CardPrinting> budgetPrintings = allPrintings.stream()
+                .filter(p -> p.getRarity().toLowerCase().contains("common") || 
+                            p.getRarity().toLowerCase().contains("uncommon"))
+                .limit(3)
+                .collect(Collectors.toList());
+            
+            List<CardPrinting> yugiohPrintings = allPrintings.stream()
+                .filter(p -> p.getCard().getCardGame().getName().equals("Yu-Gi-Oh"))
+                .limit(5)
+                .collect(Collectors.toList());
+            
+            List<CardPrinting> favoritePrintings = allPrintings.stream()
+                .filter(p -> p.getCard().getName().contains("Umbreon") || 
+                            p.getCard().getName().contains("Atraxa") ||
+                            p.getCard().getName().contains("Raye"))
+                .limit(3)
+                .collect(Collectors.toList());
+            
+            // SIMPLE APPROACH: Use native queries to populate the join table
+            populateWatchlistDirectly("Favorites", collector.getId(), favoritePrintings);
+            populateWatchlistDirectly("Investment Watch", investor.getId(), expensivePrintings);
+            populateWatchlistDirectly("Budget Buys", collector.getId(), budgetPrintings);
+            populateWatchlistDirectly("Yu-Gi-Oh Collection", yugiohFan.getId(), yugiohPrintings);
+            
+            System.out.println("Watchlists populated with card printings!");
+        } catch (Exception e) {
+            System.err.println("Error populating watchlists: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // Helper method to directly populate the relationship
+    private void populateWatchlistDirectly(String watchlistName, Long userId, List<CardPrinting> printings) {
+        // Find the watchlist
+        List<Watchlist> userWatchlists = watchlistRepository.findByUserId(userId);
+        Watchlist watchlist = userWatchlists.stream()
+            .filter(w -> w.getName().equals(watchlistName))
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException(watchlistName + " not found for user " + userId));
+        
+        // Clear existing relationships
+        watchlist.getCardPrintings().clear();
+        watchlistRepository.saveAndFlush(watchlist);
+        
+        // Add new cards
+        if (!printings.isEmpty()) {
+            watchlist.getCardPrintings().addAll(printings);
+            watchlistRepository.saveAndFlush(watchlist);
+            System.out.println(watchlistName + " populated with " + printings.size() + " cards");
+        }
+    }
+
     private CardPrice createPriceForPrinting(CardPrinting printing) {
         CardPrice price = new CardPrice();
         price.setCardPrinting(printing);
         price.setTimestamp(LocalDateTime.now().minusDays((long) (Math.random() * 30)));
         
-        // Generate realistic price ranges based on rarity
         float basePrice = getBasePriceByRarity(printing.getRarity());
-        float variation = (float) (Math.random() * 0.4 * basePrice); // ±20% variation
+        float variation = (float) (Math.random() * 0.4 * basePrice);
         
-        // Round all price fields to 2 decimal places
         price.setPrice_trend(roundToTwoDecimals(basePrice + variation * 0.1f));
         price.setPrice_average(roundToTwoDecimals(basePrice + variation * 0.05f));
         price.setPrice_low(roundToTwoDecimals(basePrice - variation * 0.15f));
@@ -211,12 +334,12 @@ public class DataLoader implements CommandLineRunner {
 
     private float getBasePriceByRarity(String rarity) {
         float price = switch (rarity.toLowerCase()) {
-            case "common", "uncommon" -> 0.10f + (float) (Math.random() * 0.40f); // $0.10 - $0.50
-            case "rare", "super rare", "holo" -> 1.00f + (float) (Math.random() * 4.00f); // $1 - $5
-            case "mythic", "ultra rare", "full art" -> 5.00f + (float) (Math.random() * 15.00f); // $5 - $20
-            case "secret rare", "rainbow rare", "quarter century" -> 20.00f + (float) (Math.random() * 80.00f); // $20 - $100
-            case "foil", "1st edition" -> 2.00f + (float) (Math.random() * 8.00f); // $2 - $10
-            default -> 0.50f + (float) (Math.random() * 2.00f); // $0.50 - $2.50
+            case "common", "uncommon" -> 0.10f + (float) (Math.random() * 0.40f);
+            case "rare", "super rare", "holo" -> 1.00f + (float) (Math.random() * 4.00f);
+            case "mythic", "ultra rare", "full art" -> 5.00f + (float) (Math.random() * 15.00f);
+            case "secret rare", "rainbow rare", "quarter century" -> 20.00f + (float) (Math.random() * 80.00f);
+            case "foil", "1st edition" -> 2.00f + (float) (Math.random() * 8.00f);
+            default -> 0.50f + (float) (Math.random() * 2.00f);
         };
         
         return roundToTwoDecimals(price);
@@ -244,113 +367,12 @@ public class DataLoader implements CommandLineRunner {
         return printing;
     }
     
-    public void loadUsersAndWatchlists() {
-        if (userRepository.count() == 0) {
-            // Create sample users
-            List<User> users = List.of(
-                createUser("cardCollector"),
-                createUser("mtgInvestor"),
-                createUser("yugiohFan")
-            );
-            userRepository.saveAll(users);
-            System.out.println("Users loaded!");
-            
-            // Create sample watchlists
-            User collector = userRepository.findByUsername("cardCollector").orElseThrow();
-            User investor = userRepository.findByUsername("mtgInvestor").orElseThrow();
-            User yugiohFan = userRepository.findByUsername("yugiohFan").orElseThrow();
-            
-            List<Watchlist> watchlists = List.of(
-                createWatchlist("Favorites", 24, collector),
-                createWatchlist("Investment Watch", 6, investor),
-                createWatchlist("Budget Buys", 12, collector),
-                createWatchlist("Yu-Gi-Oh Collection", 24, yugiohFan)
-            );
-            watchlistRepository.saveAll(watchlists);
-            System.out.println("Watchlists loaded!");
-        }
-    }
-
- // NEW METHOD: Populate watchlists with card printings
-    private void populateWatchlistsWithCards() {
-        // Get fresh watchlists without touching their collections
-        User collector = userRepository.findByUsername("cardCollector").orElseThrow();
-        User investor = userRepository.findByUsername("mtgInvestor").orElseThrow();
-        User yugiohFan = userRepository.findByUsername("yugiohFan").orElseThrow();
-        
-        // Get watchlists by ID (fresh entities)
-        Watchlist favorites = getFreshWatchlist("Favorites", collector.getId());
-        Watchlist investment = getFreshWatchlist("Investment Watch", investor.getId());
-        Watchlist budget = getFreshWatchlist("Budget Buys", collector.getId());
-        Watchlist yugioh = getFreshWatchlist("Yu-Gi-Oh Collection", yugiohFan.getId());
-        
-        List<CardPrinting> allPrintings = cardPrintingRepo.findAll();
-        
-        // Get specific printings
-        List<CardPrinting> expensivePrintings = allPrintings.stream()
-            .filter(p -> p.getRarity().toLowerCase().contains("mythic") || 
-                        p.getRarity().toLowerCase().contains("secret") ||
-                        p.getRarity().toLowerCase().contains("rainbow"))
-            .limit(4)
-            .toList();
-        
-        List<CardPrinting> budgetPrintings = allPrintings.stream()
-            .filter(p -> p.getRarity().toLowerCase().contains("common") || 
-                        p.getRarity().toLowerCase().contains("uncommon"))
-            .limit(3)
-            .toList();
-        
-        List<CardPrinting> yugiohPrintings = allPrintings.stream()
-            .filter(p -> p.getCard().getCardGame().getName().equals("Yu-Gi-Oh"))
-            .limit(5)
-            .toList();
-        
-        List<CardPrinting> favoritePrintings = allPrintings.stream()
-            .filter(p -> p.getCard().getName().contains("Umbreon") || 
-                        p.getCard().getName().contains("Atraxa") ||
-                        p.getCard().getName().contains("Raye"))
-            .limit(3)
-            .toList();
-        
-        // SIMPLEST APPROACH: Use the service method to add cards to watchlists
-        // This avoids dealing with lazy loading entirely
-        try {
-            // Clear existing relationships by recreating the watchlists
-            recreateWatchlistWithCards(favorites, favoritePrintings);
-            recreateWatchlistWithCards(investment, expensivePrintings);
-            recreateWatchlistWithCards(budget, budgetPrintings);
-            recreateWatchlistWithCards(yugioh, yugiohPrintings);
-            
-            System.out.println("Watchlists populated with card printings!");
-        } catch (Exception e) {
-            System.err.println("Error populating watchlists: " + e.getMessage());
-            // Don't fail the entire application if this part fails
-        }
-    }
-
-    // Helper method to get fresh watchlist entities
-    private Watchlist getFreshWatchlist(String name, Long userId) {
-        return watchlistRepository.findByUserId(userId)
-            .stream()
-            .filter(w -> w.getName().equals(name))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException(name + " watchlist not found"));
-    }
-
-    // Helper method to recreate watchlist with new cards (avoids lazy loading issues)
-    private void recreateWatchlistWithCards(Watchlist watchlist, List<CardPrinting> cardPrintings) {
-        // Get a fresh copy of the watchlist
-        Watchlist freshWatchlist = watchlistRepository.findById(watchlist.getId()).orElseThrow();
-        
-        // Clear the relationship using a native query or by setting a new list
-        freshWatchlist.setCardPrintings(new java.util.ArrayList<>());
-        watchlistRepository.save(freshWatchlist);
-        
-        // Now add the new cards
-        freshWatchlist.getCardPrintings().addAll(cardPrintings);
-        watchlistRepository.save(freshWatchlist);
-        
-        System.out.println(freshWatchlist.getName() + " now has " + freshWatchlist.getCardPrintings().size() + " cards");
+    // NEW METHOD: Create user credentials
+    private UserCredentials createUserCredentials(Long userId, String plainPassword) {
+        UserCredentials credentials = new UserCredentials();
+        credentials.setUserId(userId);
+        credentials.setEncryptedPassword(passwordEncoder.encode(plainPassword));
+        return credentials;
     }
 
     private User createUser(String username) {
@@ -365,5 +387,26 @@ public class DataLoader implements CommandLineRunner {
         watchlist.setRefreshRate(refreshRate);
         watchlist.setUser(user);
         return watchlist;
+    }
+
+    // Helper method to get fresh watchlist entities
+    private Watchlist getFreshWatchlist(String name, Long userId) {
+        return watchlistRepository.findByUserId(userId)
+            .stream()
+            .filter(w -> w.getName().equals(name))
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException(name + " watchlist not found"));
+    }
+
+    // Helper method to recreate watchlist with new cards
+    private void recreateWatchlistWithCards(Watchlist watchlist, List<CardPrinting> cardPrintings) {
+        Watchlist freshWatchlist = watchlistRepository.findById(watchlist.getId()).orElseThrow();
+        freshWatchlist.setCardPrintings(new java.util.ArrayList<>());
+        watchlistRepository.save(freshWatchlist);
+        
+        freshWatchlist.getCardPrintings().addAll(cardPrintings);
+        watchlistRepository.save(freshWatchlist);
+        
+        System.out.println(freshWatchlist.getName() + " now has " + freshWatchlist.getCardPrintings().size() + " cards");
     }
 }

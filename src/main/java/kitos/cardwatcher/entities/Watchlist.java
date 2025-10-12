@@ -1,6 +1,7 @@
 package kitos.cardwatcher.entities;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -45,7 +46,7 @@ public class Watchlist {
 	        joinColumns = @JoinColumn(name = "watchlist_id"),
 	        inverseJoinColumns = @JoinColumn(name = "card_printing_id")
 	    )
-	    private List<CardPrinting> cardPrintings;
+	    private List<CardPrinting> cardPrintings = new ArrayList<>();
     
     
 

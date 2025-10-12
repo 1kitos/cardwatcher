@@ -20,7 +20,7 @@ public class User {
     private String username;
     
     @OneToMany(mappedBy = "user")
-    private List<Watchlist> watchlists; // User has multiple watchlists
+    private List<Watchlist> watchlists;
 
 
 	public User() 
