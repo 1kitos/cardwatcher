@@ -31,9 +31,9 @@ public class CreateCardPriceRequest {
     public CardPrice toCardPrice() {
         CardPrice cardPrice = new CardPrice();
         cardPrice.setTimestamp(this.timestamp);
-        cardPrice.setPrice_trend(this.priceTrend);
-        cardPrice.setPrice_average(this.priceAverage);
-        cardPrice.setPrice_low(this.priceLow);
+        cardPrice.setPriceTrend(this.priceTrend);
+        cardPrice.setPriceAverage(this.priceAverage);
+        cardPrice.setPriceLow(this.priceLow);
         return cardPrice;
     }
 }

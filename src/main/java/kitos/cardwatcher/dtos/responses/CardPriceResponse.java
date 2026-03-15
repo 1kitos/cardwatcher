@@ -15,9 +15,9 @@ public class CardPriceResponse {
     public CardPriceResponse(CardPrice entity) {
         this.id = entity.getId();
         this.timestamp = entity.getTimestamp();
-        this.priceTrend = entity.getPrice_trend();
-        this.priceAverage = entity.getPrice_average();
-        this.priceLow = entity.getPrice_low();
+        this.priceTrend = entity.getPriceTrend();
+        this.priceAverage = entity.getPriceAverage();
+        this.priceLow = entity.getPriceLow();
         
         if (entity.getCardPrinting() != null) {
             this.cardPrintingId = entity.getCardPrinting().getId();

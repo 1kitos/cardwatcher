@@ -321,9 +321,9 @@ public class DataLoader implements CommandLineRunner {
         float basePrice = getBasePriceByRarity(printing.getRarity());
         float variation = (float) (Math.random() * 0.4 * basePrice);
         
-        price.setPrice_trend(roundToTwoDecimals(basePrice + variation * 0.1f));
-        price.setPrice_average(roundToTwoDecimals(basePrice + variation * 0.05f));
-        price.setPrice_low(roundToTwoDecimals(basePrice - variation * 0.15f));
+        price.setPriceTrend(roundToTwoDecimals(basePrice + variation * 0.1f));
+        price.setPriceAverage(roundToTwoDecimals(basePrice + variation * 0.05f));
+        price.setPriceLow(roundToTwoDecimals(basePrice - variation * 0.15f));
         
         return price;
     }
