@@ -14,9 +14,9 @@ public class CardPriceDTO {
     public CardPriceDTO(CardPrice cardPrice) {
         this.id = cardPrice.getId();
         this.timestamp = cardPrice.getTimestamp();
-        this.priceTrend = cardPrice.getPrice_trend();
-        this.priceAverage = cardPrice.getPrice_average();
-        this.priceLow = cardPrice.getPrice_low();
+        this.priceTrend = cardPrice.getPriceTrend();
+        this.priceAverage = cardPrice.getPriceAverage();
+        this.priceLow = cardPrice.getPriceLow();
         
         if (cardPrice.getCardPrinting() != null) {
             this.cardPrintingId = cardPrice.getCardPrinting().getId();
