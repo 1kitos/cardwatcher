@@ -23,6 +23,9 @@ public class AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
     
+    @Autowired
+    private JwtService jwtService;
+    
     public boolean registerUser(String username, String password) {
         
         if (userRepository.existsByUsername(username)) {
@@ -58,5 +61,10 @@ public class AuthService {
     
     public Optional<Long> getUserIdFromUsername(String username) {
         return userRepository.findByUsername(username).map(User::getId);
+    }
+    
+    public String generateToken(String username) {
+        User user = userRepository.findByUsername(username).orElseThrow();
+        return jwtService.generateToken(user);
     }
 }
