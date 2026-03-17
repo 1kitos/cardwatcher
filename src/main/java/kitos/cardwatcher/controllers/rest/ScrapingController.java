@@ -29,4 +29,12 @@ public class ScrapingController {
     public CardPrinting scrapeCardPrinting(@RequestParam("url") String url) {
         return scrapingService.scrapeCardPrinting(url);
     }
+    
+    @GetMapping("/scrape-by-name")
+    public CardPrinting scrapeByName(
+            @RequestParam("game") String game,
+            @RequestParam("set") String set,
+            @RequestParam("card") String card) {
+        return scrapingService.scrapeByCardInfo(game, set, card);
+    }
 }

@@ -1,61 +1,52 @@
 package kitos.cardwatcher.entities;
 
+import java.util.Collection;
 import java.util.List;
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Entity
 @Table(name = "app_users")
-public class User {
-	
+public class User implements UserDetails {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     private String username;
-    
+
     @OneToMany(mappedBy = "user")
     private List<Watchlist> watchlists;
 
+    public User() { super(); }
 
-	public User() 
-	{
-		super();
-	}
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-	public Long getId() {
-		return id;
-	}
+    @Override
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    public List<Watchlist> getWatchlists() { return watchlists; }
+    public void setWatchlists(List<Watchlist> watchlists) { this.watchlists = watchlists; }
 
-	public String getUsername() {
-		return username;
-	}
+    // UserDetails - obrigatórios
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() { return List.of(); }
 
-	public void setUsername(String username) {
-		this.username = username;
-	}
+    @Override
+    public String getPassword() { return null; } // password está em UserCredentials
 
-	public List<Watchlist> getWatchlists() {
-		return watchlists;
-	}
+    @Override
+    public boolean isAccountNonExpired() { return true; }
 
-	public void setWatchlists(List<Watchlist> watchlists) {
-		this.watchlists = watchlists;
-	}
+    @Override
+    public boolean isAccountNonLocked() { return true; }
 
+    @Override
+    public boolean isCredentialsNonExpired() { return true; }
 
-	
-	
-	
-	
-	
+    @Override
+    public boolean isEnabled() { return true; }
 }

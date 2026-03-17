@@ -172,6 +172,26 @@ public class ScrapingService {
     }
     
     
+ // ScrapingService
+    public String buildCardmarketUrl(String game, String setName, String cardName) {
+        return "https://www.cardmarket.com/en/"
+            + toCardmarketFormat(game) + "/Products/Singles/"
+            + toCardmarketFormat(setName) + "/"
+            + toCardmarketFormat(cardName);
+    }
+
+    private String toCardmarketFormat(String input) {
+        return input
+            .replaceAll("[^a-zA-Z0-9 ]", "")
+            .trim()
+            .replaceAll(" +", "-");
+    }
+
+    public CardPrinting scrapeByCardInfo(String game, String setName, String cardName) {
+        String url = buildCardmarketUrl(game, setName, cardName);
+        return scrapeCardPrinting(url);
+    }
+    
     
     
 }
