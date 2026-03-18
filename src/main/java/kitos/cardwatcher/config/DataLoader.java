@@ -80,7 +80,7 @@ public class DataLoader implements CommandLineRunner {
             List<CardGame> games = List.of(
                 createCardGame("Magic: The Gathering"),
                 createCardGame("Pokémon TCG"), 
-                createCardGame("Yu-Gi-Oh")
+                createCardGame("Yugioh")
             );
             cardGameRepo.saveAll(games);
             System.out.println("Card games loaded!");
@@ -95,8 +95,8 @@ public class DataLoader implements CommandLineRunner {
             CardGame pokemon = cardGameRepo.findByName("Pokémon TCG")
                 .orElseThrow(() -> new RuntimeException("Pokemon not found"));
             
-            CardGame yugioh = cardGameRepo.findByName("Yu-Gi-Oh")
-                .orElseThrow(() -> new RuntimeException("YuGiOh not found"));
+            CardGame Yugioh = cardGameRepo.findByName("Yugioh")
+                .orElseThrow(() -> new RuntimeException("Yugioh not found"));
 
             // Create MTG cards
             List<Card> mtgCards = List.of(
@@ -111,15 +111,15 @@ public class DataLoader implements CommandLineRunner {
                 createCard("Chikorita", pokemon)
             );
             
-            List<Card> yugiohCards = List.of(
-                createCard("Sky Striker Ace - Raye", yugioh),
-                createCard("S:P Little Knight", yugioh),
-                createCard("Dominus Impulse", yugioh)
+            List<Card> YugiohCards = List.of(
+                createCard("Sky Striker Ace - Raye", Yugioh),
+                createCard("S:P Little Knight", Yugioh),
+                createCard("Dominus Impulse", Yugioh)
             );
             
             cardRepo.saveAll(mtgCards);
             cardRepo.saveAll(pokemonCards);
-            cardRepo.saveAll(yugiohCards);
+            cardRepo.saveAll(YugiohCards);
         }
     }
     
@@ -141,13 +141,13 @@ public class DataLoader implements CommandLineRunner {
             Card chikorita = cardRepo.findByNameAndCardGame("Chikorita", 
                 cardGameRepo.findByName("Pokémon TCG").orElseThrow());
             
-            // Get Yu-Gi-Oh cards
+            // Get Yugioh cards
             Card raye = cardRepo.findByNameAndCardGame("Sky Striker Ace - Raye", 
-                cardGameRepo.findByName("Yu-Gi-Oh").orElseThrow());
+                cardGameRepo.findByName("Yugioh").orElseThrow());
             Card littleKnight = cardRepo.findByNameAndCardGame("S:P Little Knight", 
-                cardGameRepo.findByName("Yu-Gi-Oh").orElseThrow());
+                cardGameRepo.findByName("Yugioh").orElseThrow());
             Card dominus = cardRepo.findByNameAndCardGame("Dominus Impulse", 
-                cardGameRepo.findByName("Yu-Gi-Oh").orElseThrow());
+                cardGameRepo.findByName("Yugioh").orElseThrow());
 
             // Create printings for MTG cards
             List<CardPrinting> mtgPrintings = List.of(
@@ -169,8 +169,8 @@ public class DataLoader implements CommandLineRunner {
                 createPrinting(chikorita, "NG", "1st Edition", "0541")
             );
             
-            // Create printings for Yu-Gi-Oh cards
-            List<CardPrinting> yugiohPrintings = List.of(
+            // Create printings for Yugioh cards
+            List<CardPrinting> YugiohPrintings = List.of(
                 createPrinting(raye, "BLHR", "Ultra Rare", "001"),
                 createPrinting(raye, "DASA", "Super Rare", "001"),
                 createPrinting(littleKnight, "AGOV", "Quarter Century", "001"),
@@ -181,7 +181,7 @@ public class DataLoader implements CommandLineRunner {
             
             cardPrintingRepo.saveAll(mtgPrintings);
             cardPrintingRepo.saveAll(pokemonPrintings);
-            cardPrintingRepo.saveAll(yugiohPrintings);
+            cardPrintingRepo.saveAll(YugiohPrintings);
             
             System.out.println("Card printings loaded!");
         }
@@ -209,7 +209,7 @@ public class DataLoader implements CommandLineRunner {
             List<User> users = List.of(
                 createUser("cardCollector"),
                 createUser("mtgInvestor"),
-                createUser("yugiohFan")
+                createUser("YugiohFan")
             );
             userRepository.saveAll(users);
             System.out.println("Users loaded!");
@@ -218,7 +218,7 @@ public class DataLoader implements CommandLineRunner {
             List<UserCredentials> credentials = List.of(
                 createUserCredentials(users.get(0).getId(), "password123"),
                 createUserCredentials(users.get(1).getId(), "investor456"),
-                createUserCredentials(users.get(2).getId(), "yugioh789")
+                createUserCredentials(users.get(2).getId(), "Yugioh789")
             );
             userCredentialsRepository.saveAll(credentials);
             System.out.println("User credentials loaded!");
@@ -230,13 +230,13 @@ public class DataLoader implements CommandLineRunner {
             // Get users (already created in loadUsersAndCredentials)
             User collector = userRepository.findByUsername("cardCollector").orElseThrow();
             User investor = userRepository.findByUsername("mtgInvestor").orElseThrow();
-            User yugiohFan = userRepository.findByUsername("yugiohFan").orElseThrow();
+            User YugiohFan = userRepository.findByUsername("YugiohFan").orElseThrow();
             
             List<Watchlist> watchlists = List.of(
                 createWatchlist("Favorites", 24, collector),
                 createWatchlist("Investment Watch", 6, investor),
                 createWatchlist("Budget Buys", 12, collector),
-                createWatchlist("Yu-Gi-Oh Collection", 24, yugiohFan)
+                createWatchlist("Yugioh Collection", 24, YugiohFan)
             );
             watchlistRepository.saveAll(watchlists);
             System.out.println("Watchlists loaded!");
@@ -248,7 +248,7 @@ public class DataLoader implements CommandLineRunner {
             // Get users
             User collector = userRepository.findByUsername("cardCollector").orElseThrow();
             User investor = userRepository.findByUsername("mtgInvestor").orElseThrow();
-            User yugiohFan = userRepository.findByUsername("yugiohFan").orElseThrow();
+            User YugiohFan = userRepository.findByUsername("YugiohFan").orElseThrow();
             
             // Get all printings
             List<CardPrinting> allPrintings = cardPrintingRepo.findAll();
@@ -267,8 +267,8 @@ public class DataLoader implements CommandLineRunner {
                 .limit(3)
                 .collect(Collectors.toList());
             
-            List<CardPrinting> yugiohPrintings = allPrintings.stream()
-                .filter(p -> p.getCard().getCardGame().getName().equals("Yu-Gi-Oh"))
+            List<CardPrinting> YugiohPrintings = allPrintings.stream()
+                .filter(p -> p.getCard().getCardGame().getName().equals("Yugioh"))
                 .limit(5)
                 .collect(Collectors.toList());
             
@@ -283,7 +283,7 @@ public class DataLoader implements CommandLineRunner {
             populateWatchlistDirectly("Favorites", collector.getId(), favoritePrintings);
             populateWatchlistDirectly("Investment Watch", investor.getId(), expensivePrintings);
             populateWatchlistDirectly("Budget Buys", collector.getId(), budgetPrintings);
-            populateWatchlistDirectly("Yu-Gi-Oh Collection", yugiohFan.getId(), yugiohPrintings);
+            populateWatchlistDirectly("Yugioh Collection", YugiohFan.getId(), YugiohPrintings);
             
             System.out.println("Watchlists populated with card printings!");
         } catch (Exception e) {
