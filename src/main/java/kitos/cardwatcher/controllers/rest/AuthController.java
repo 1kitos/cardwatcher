@@ -29,13 +29,13 @@ public class AuthController {
 	}
 
 	@PostMapping("/login")
-	@Operation(summary = "Login user")
 	public ResponseEntity<?> loginUser(@RequestBody LoginRequestDTO request) {
-		if (authService.validateCredentials(request.getUsername(), request.getPassword())) {
-			String token = authService.generateToken(request.getUsername());
-			return ResponseEntity.ok().body(Map.of("token", token));
-		} else {
-			return ResponseEntity.badRequest().body(Map.of("error", "Invalid credentials"));
-		}
+	    if (authService.validateCredentials(request.getUsername(), request.getPassword())) {
+	        String token = authService.generateToken(request.getUsername());
+	        Long userId = authService.getUserIdFromUsername(request.getUsername()).orElseThrow();
+	        return ResponseEntity.ok().body(Map.of("token", token, "userId", userId));
+	    } else {
+	        return ResponseEntity.badRequest().body(Map.of("error", "Invalid credentials"));
+	    }
 	}
 }
