@@ -151,4 +151,15 @@ public class CardPrintingController {
             return ResponseEntity.notFound().build();
         }
     }
+    
+    
+    @GetMapping("/find")
+    public CardPrintingDTO findPrinting(
+            @RequestParam("setCode") String setCode,
+            @RequestParam("rarity") String rarity,
+            @RequestParam("cardName") String cardName) {
+        return cardPrintingService.findBySetCodeRarityAndCardName(setCode, rarity, cardName)
+            .map(CardPrintingDTO::new)
+            .orElse(null);
+    }
 }

@@ -55,14 +55,14 @@ public class DataLoader implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        clearData();
-        loadCardGames();
-        loadCards();
-        loadCardPrintings();
-        loadCardPrices();
-        loadUsersAndCredentials(); // Updated method
-        loadUsersAndWatchlists();
-        populateWatchlistsWithCards();
+//        clearData();
+//        loadCardGames();
+//        loadCards();
+//        loadCardPrintings();
+//        loadCardPrices();
+//        loadUsersAndCredentials(); // Updated method
+//        loadUsersAndWatchlists();
+//        populateWatchlistsWithCards();
     }
     
     private void clearData() {

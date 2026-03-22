@@ -1,6 +1,11 @@
 package kitos.cardwatcher.services;
 
-import com.microsoft.playwright.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import kitos.cardwatcher.entities.Card;
 import kitos.cardwatcher.entities.CardGame;
@@ -11,16 +16,18 @@ import kitos.cardwatcher.repositories.CardPriceRepository;
 import kitos.cardwatcher.repositories.CardPrintingRepository;
 import kitos.cardwatcher.repositories.CardRepository;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 @Service
 public class ScrapingService {
-	
-	@Autowired
+
+    @Autowired
     private CardGameRepository cardGameRepository;
 
     @Autowired
@@ -31,167 +38,148 @@ public class ScrapingService {
 
     @Autowired
     private CardPriceRepository cardPriceRepository;
-	
 
-	private Browser createBrowser(Playwright playwright) {
-	    return playwright.chromium().launch(
-	        new BrowserType.LaunchOptions()
-	            .setHeadless(true)
-	            .setExecutablePath(java.nio.file.Paths.get("C:/Program Files/Google/Chrome/Application/chrome.exe"))
-	            .setArgs(java.util.List.of(
-	                "--disable-blink-features=AutomationControlled",
-	                "--no-sandbox",
-	                "--disable-dev-shm-usage"
-	            ))
-	    );
-	}
+    
+    private static final String FLARESOLVERR_URL = "http://localhost:8191/v1";
 
-	private Page createPage(Browser browser) {
-	    BrowserContext context = browser.newContext(
-	        new Browser.NewContextOptions()
-	            .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-	    );
-	    Page page = context.newPage();
-	    // Esconde que é automation
-	    page.addInitScript("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
-	    return page;
-	}
+    // Page Navigation for yugioh cards on cardmarket
+    
+    private String fetchHtml(String url) throws Exception {
+        String body = """
+            {
+                "cmd": "request.get",
+                "url": "%s",
+                "maxTimeout": 60000
+            }
+            """.formatted(url);
 
-    private Page navigateTo(Browser browser, String url) {
-        Page page = createPage(browser);
-        page.navigate(url);
-        page.waitForFunction("() => document.title !== 'Just a moment...'");
-        return page;
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(FLARESOLVERR_URL))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(body))
+            .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(response.body());
+        return root.path("solution").path("response").asText();
     }
 
-    public String getPageTitle(String url) {
-        try (Playwright playwright = Playwright.create()) {
-            Browser browser = createBrowser(playwright);
-            Page page = navigateTo(browser, url);
-            return page.title();
-        }
-    }
-    
-    
-    
-    public CardPrice scrapeCardPrice(String url) {
-        try (Playwright playwright = Playwright.create()) {
-            Browser browser = createBrowser(playwright);
-            Page page = navigateTo(browser, url);
-
-            String trend = extractLabeledValue(page, "Price Trend");
-            String average30 = extractLabeledValue(page, "30-days average price");
-            String low = extractLabeledValue(page, "From");
-
-            CardPrice cardPrice = new CardPrice();
-            cardPrice.setTimestamp(LocalDateTime.now());
-            cardPrice.setPriceTrend(parsePrice(trend));
-            cardPrice.setPriceAverage(parsePrice(average30));
-            cardPrice.setPriceLow(parsePrice(low));
-
-            return cardPrice;
-        }
-    }
-
-    private String extractLabeledValue(Page page, String label) {
-        return (String) page.evalOnSelector(
-            "dt:has-text('" + label + "') + dd",
-            "el => el.innerText"
-        );
+    private String extractLabeledValue(Document doc, String label) {
+        return doc.select("dt:containsOwn(" + label + ") + dd").text();
     }
 
     private float parsePrice(String price) {
         return Float.parseFloat(price.replace("€", "").replace(",", ".").trim());
     }
-    
-    
-    public CardPrinting scrapeCardPrinting(String url) {
-        try (Playwright playwright = Playwright.create()) {
-            Browser browser = createBrowser(playwright);
-            Page page = navigateTo(browser, url);
 
-            // Extrair da página
-            String cardName = (String) page.evalOnSelector("h1", "el => el.firstChild.textContent.trim()");
-            String rarity = page.getAttribute("dt:has-text('Rarity') + dd svg", "aria-label");
-            String number = (String) page.evalOnSelector("dt:has-text('Number') + dd", "el => el.innerText.trim()");
-
-            // Extrair da URL
-            String[] parts = url.split("/");
-            String gameName = parts[4];  // YuGiOh
-            String setCode = parts[7];   // Duelists-Advance
-
-            // Find or create CardGame
-            CardGame cardGame = cardGameRepository.findByNameIgnoreCase(gameName)
-                .orElseGet(() -> {
-                    CardGame newGame = new CardGame();
-                    newGame.setName(gameName);
-                    return cardGameRepository.save(newGame);
-                });
-
-            // Find or create Card
-            Card card = Optional.ofNullable(cardRepository.findByNameAndCardGame(cardName, cardGame))
-                .orElseGet(() -> {
-                    Card newCard = new Card();
-                    newCard.setName(cardName);
-                    newCard.setCardGame(cardGame);
-                    return cardRepository.save(newCard);
-                });
-
-            // Find or create CardPrinting
-            CardPrinting printing = cardPrintingRepository
-                .findByCardIdAndSetCode(card.getId(), setCode)
-                .stream()
-                .filter(p -> p.getSerialNumber().equals(number))
-                .findFirst()
-                .orElseGet(() -> {
-                    CardPrinting newPrinting = new CardPrinting();
-                    newPrinting.setCard(card);
-                    newPrinting.setSetCode(setCode);
-                    newPrinting.setRarity(rarity);
-                    newPrinting.setSerialNumber(number);
-                    return cardPrintingRepository.save(newPrinting);
-                });
-
-            // Scrape e guardar o preço
-            String trend = extractLabeledValue(page, "Price Trend");
-            String average30 = extractLabeledValue(page, "30-days average price");
-            String low = extractLabeledValue(page, "From");
-
-            CardPrice cardPrice = new CardPrice();
-            cardPrice.setTimestamp(LocalDateTime.now());
-            cardPrice.setPriceTrend(parsePrice(trend));
-            cardPrice.setPriceAverage(parsePrice(average30));
-            cardPrice.setPriceLow(parsePrice(low));
-            cardPrice.setCardPrinting(printing);
-            cardPriceRepository.save(cardPrice);
-
-            return printing;
-        }
-    
-    
+    public String getPageTitle(String url) throws Exception {
+        String html = fetchHtml(url);
+        return Jsoup.parse(html).title();
     }
     
-    
- // ScrapingService
     public String buildCardmarketUrl(String game, String setName, String cardName) {
-        return "https://www.cardmarket.com/en/"
-            + toCardmarketFormat(game) + "/Products/Singles/"
-            + toCardmarketFormat(setName) + "/"
-            + toCardmarketFormat(cardName);
+        return "https://www.cardmarket.com/en/" + toCardmarketFormat(game) + "/Products/Singles/"
+            + toCardmarketFormat(setName) + "/" + toCardmarketFormat(cardName);
     }
-
+    
     private String toCardmarketFormat(String input) {
-        return input
-            .replaceAll("[^a-zA-Z0-9 ]", "")
-            .trim()
-            .replaceAll(" +", "-");
+        return input.replaceAll("[^a-zA-Z0-9 ]", "").trim().replaceAll(" +", "-");
+    }
+    
+    
+    // SCRAPING LOGIC
+    
+    
+    public CardPrice scrapeCardPrice(String url) throws Exception {
+        String html = fetchHtml(url);
+        Document doc = Jsoup.parse(html);
+
+        String trend = extractLabeledValue(doc, "Price Trend");
+        String average30 = extractLabeledValue(doc, "30-days average price");
+        String low = extractLabeledValue(doc, "From");
+
+        CardPrice cardPrice = new CardPrice();
+        cardPrice.setTimestamp(LocalDateTime.now());
+        cardPrice.setPriceTrend(parsePrice(trend));
+        cardPrice.setPriceAverage(parsePrice(average30));
+        cardPrice.setPriceLow(parsePrice(low));
+
+        return cardPrice;
+    }
+    
+    public CardPrinting scrapeCardPrinting(String url, boolean save) throws Exception {
+        String html = fetchHtml(url);
+        Document doc = Jsoup.parse(html);
+
+        String cardName = doc.selectFirst("h1").ownText().trim();
+
+        // Raridade — tenta o aria-label do SVG primeiro
+        String rarity = doc.select("dt:containsOwn(Rarity) + dd svg").attr("aria-label");
+        if (rarity.isEmpty()) {
+            rarity = doc.select("dt:containsOwn(Rarity) + dd").text().trim();
+        }
+
+        String number = doc.select("dt:containsOwn(Number) + dd").text().trim();
+
+        String[] parts = url.split("/");
+        String gameName = parts[4];
+        String setCode = parts[7];
+
+        String trend = extractLabeledValue(doc, "Price Trend");
+        String average30 = extractLabeledValue(doc, "30-days average price");
+        String low = extractLabeledValue(doc, "From");
+
+        CardPrice cardPrice = new CardPrice();
+        cardPrice.setTimestamp(LocalDateTime.now());
+        cardPrice.setPriceTrend(parsePrice(trend));
+        cardPrice.setPriceAverage(parsePrice(average30));
+        cardPrice.setPriceLow(parsePrice(low));
+
+        if (!save) {
+            CardPrinting temp = new CardPrinting();
+            temp.setSetCode(setCode);
+            temp.setRarity(rarity);
+            temp.setSerialNumber(number);
+            temp.setPriceHistory(java.util.List.of(cardPrice));
+            return temp;
+        }
+
+        CardGame cardGame = cardGameRepository.findByNameIgnoreCase(gameName).orElseGet(() -> {
+            CardGame newGame = new CardGame();
+            newGame.setName(gameName);
+            return cardGameRepository.save(newGame);
+        });
+
+        Card card = Optional.ofNullable(cardRepository.findByNameAndCardGame(cardName, cardGame)).orElseGet(() -> {
+            Card newCard = new Card();
+            newCard.setName(cardName);
+            newCard.setCardGame(cardGame);
+            return cardRepository.save(newCard);
+        });
+
+        String finalRarity = rarity;
+        String finalNumber = number;
+        CardPrinting printing = cardPrintingRepository.findByCardIdAndSetCode(card.getId(), setCode).stream()
+            .filter(p -> p.getSerialNumber().equals(finalNumber)).findFirst().orElseGet(() -> {
+                CardPrinting newPrinting = new CardPrinting();
+                newPrinting.setCard(card);
+                newPrinting.setSetCode(setCode);
+                newPrinting.setRarity(finalRarity);
+                newPrinting.setSerialNumber(finalNumber);
+                return cardPrintingRepository.save(newPrinting);
+            });
+
+        cardPrice.setCardPrinting(printing);
+        cardPriceRepository.save(cardPrice);
+        return printing;
     }
 
-    public CardPrinting scrapeByCardInfo(String game, String setName, String cardName) {
+    public CardPrinting scrapeByCardInfo(String game, String setName, String cardName, boolean save) throws Exception {
         String url = buildCardmarketUrl(game, setName, cardName);
-        return scrapeCardPrinting(url);
+        return scrapeCardPrinting(url, save);
     }
-    
-    
-    
+
 }

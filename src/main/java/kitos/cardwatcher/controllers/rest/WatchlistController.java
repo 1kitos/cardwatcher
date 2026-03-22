@@ -139,4 +139,22 @@ public class WatchlistController {
             return ResponseEntity.notFound().build();
         }
     }
+    
+//    @PostMapping("/{watchlistId}/scrape")
+//    @Operation(summary = "Scrape and add card printing to watchlist")
+//    public ResponseEntity<WatchlistResponse> scrapeAndAddToWatchlist(
+//            @PathVariable("watchlistId") Long watchlistId,
+//            @RequestParam("game") String game,
+//            @RequestParam("set") String set,
+//            @RequestParam("card") String card) {
+//        try {
+//            Watchlist updatedWatchlist = watchlistService.scrapeAndAddToWatchlist(watchlistId, game, set, card);
+//            return ResponseEntity.ok(new WatchlistResponse(updatedWatchlist));
+//        } catch (RuntimeException e) {
+//            return ResponseEntity.notFound().build();
+//        }
+//    }
+    
+    
+    
 }

@@ -6,11 +6,16 @@ import kitos.cardwatcher.entities.CardPrice;
 import kitos.cardwatcher.entities.CardPrinting;
 import kitos.cardwatcher.repositories.CardPriceRepository;
 import kitos.cardwatcher.repositories.CardPrintingRepository;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class CardPriceService {
+	
+	
+	private static final int PRICE_CACHE_HOURS = 1;
 
     @Autowired
     private CardPriceRepository cardPriceRepository;
@@ -69,5 +74,12 @@ public class CardPriceService {
     // === DELETE PRICE ===
     public void deleteCardPrice(Long id) {
         cardPriceRepository.deleteById(id);
+    }
+    
+    private boolean isPriceStale(CardPrinting printing) {
+        List<CardPrice> prices = cardPriceRepository.findByCardPrintingIdOrderByTimestampDesc(printing.getId());
+        if (prices.isEmpty()) return true;
+        LocalDateTime lastUpdate = prices.get(0).getTimestamp();
+        return lastUpdate.isBefore(LocalDateTime.now().minusHours(PRICE_CACHE_HOURS));
     }
 }

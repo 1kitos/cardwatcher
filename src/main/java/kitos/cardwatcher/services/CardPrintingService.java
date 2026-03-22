@@ -79,6 +79,12 @@ public class CardPrintingService {
         // Would associate a price with this printing
     }
     
+    public Optional<CardPrinting> findBySetCodeRarityAndCardName(String setCode, String rarity, String cardName) {
+        return cardPrintingRepository.findBySetCodeAndRarity(setCode, rarity)
+            .stream()
+            .filter(p -> p.getCard().getName().equalsIgnoreCase(cardName))
+            .findFirst();
+    }
     
     
 }

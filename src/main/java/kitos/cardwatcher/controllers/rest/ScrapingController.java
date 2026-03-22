@@ -1,7 +1,7 @@
 package kitos.cardwatcher.controllers.rest;
 
+import kitos.cardwatcher.dtos.shared.CardPrintingDTO;
 import kitos.cardwatcher.entities.CardPrice;
-import kitos.cardwatcher.entities.CardPrinting;
 import kitos.cardwatcher.services.ScrapingService;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,24 +17,44 @@ public class ScrapingController {
 
     @GetMapping("/title")
     public String getPageTitle(@RequestParam("url") String url) {
-        return scrapingService.getPageTitle(url);
+        try {
+            return scrapingService.getPageTitle(url);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get title: " + e.getMessage());
+        }
     }
-    
-    @GetMapping("/price")
-    public CardPrice getCardPrice(@RequestParam("url") String url) {
-        return scrapingService.scrapeCardPrice(url);
-    }
-    
+
+//    @GetMapping("/price")
+//    public CardPrice getCardPrice(@RequestParam("url") String url) {
+//        try {
+//            return scrapingService.scrapeCardPrice(url);
+//        } catch (Exception e) {
+//            throw new RuntimeException("Failed to scrape price: " + e.getMessage());
+//        }
+//    }
+
     @GetMapping("/scrape")
-    public CardPrinting scrapeCardPrinting(@RequestParam("url") String url) {
-        return scrapingService.scrapeCardPrinting(url);
+    public CardPrintingDTO scrapeCardPrinting(
+            @RequestParam("url") String url,
+            @RequestParam(value = "save", defaultValue = "true") boolean save) {
+        try {
+            return new CardPrintingDTO(scrapingService.scrapeCardPrinting(url, save));
+        } catch (Exception e) {
+            throw new RuntimeException("Scraping failed: " + e.getMessage());
+        }
     }
-    
+
     @GetMapping("/scrape-by-name")
-    public CardPrinting scrapeByName(
+    public CardPrintingDTO scrapeByName(
             @RequestParam("game") String game,
             @RequestParam("set") String set,
-            @RequestParam("card") String card) {
-        return scrapingService.scrapeByCardInfo(game, set, card);
+            @RequestParam("card") String card,
+            @RequestParam(value = "save", defaultValue = "true") boolean save) {
+        try {
+        	String url = scrapingService.buildCardmarketUrl(game, set, card);
+            return new CardPrintingDTO(scrapingService.scrapeCardPrinting(url, save));
+        } catch (Exception e) {
+            throw new RuntimeException("Scraping failed: " + e.getMessage());
+        }
     }
 }
